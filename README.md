@@ -87,7 +87,8 @@ runner := pgdbtemplategoose.NewMigrationRunner(
 	"./migrations",
 	pgdbtemplategoose.WithDialect(goose.DialectPostgres),
 	pgdbtemplategoose.WithGooseOptions(
-		goose.WithAllowMissing(),
+		goose.WithVerbose(true),
+		goose.WithAllowOutofOrder(true),
 	),
 )
 ```

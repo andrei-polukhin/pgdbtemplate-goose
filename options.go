@@ -20,8 +20,8 @@ func WithDialect(dialect goose.Dialect) Option {
 //	runner := NewMigrationRunner(
 //	    "./migrations",
 //	    WithGooseOptions(
-//	        goose.WithAllowMissing(),
-//	        goose.WithNoVersioning(),
+//	        goose.WithVerbose(true),
+//	        goose.WithAllowOutofOrder(true),
 //	    ),
 //	)
 func WithGooseOptions(opts ...goose.ProviderOption) Option {
