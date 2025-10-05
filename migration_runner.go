@@ -55,12 +55,8 @@ func (r *MigrationRunner) RunMigrations(ctx context.Context, conn pgdbtemplate.D
 		return fmt.Errorf("goose adapter requires database/sql connection: %w", err)
 	}
 
-	// Set goose configuration.
-	if err := goose.SetDialect(string(r.dialect)); err != nil {
-		return fmt.Errorf("failed to set goose dialect: %w", err)
-	}
-
-	// Apply options if any.
+	// Create goose provider with dialect.
+	// Using NewProvider directly is thread-safe and doesn't require global SetDialect().
 	provider, err := goose.NewProvider(r.dialect, db, os.DirFS(r.migrationsDir), r.opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create goose provider: %w", err)
