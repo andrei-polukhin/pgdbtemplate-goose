@@ -183,13 +183,6 @@ subFs, _ := fs.Sub(embeddedMigrations, "sql/migrations")
 runner := pgdbtemplategoose.NewMigrationRunner(migrationsFs)
 ```
 
-## Examples
-
-See the [`examples/`](examples/) directory for complete working examples:
-
-- [`examples/filesystem/`](examples/filesystem/) - Using `os.DirFS()` to load migrations from disk
-- [`examples/embed/`](examples/embed/) - Using `embed.FS` to bundle migrations into binary
-
 ## Requirements
 
 - Go 1.21+
