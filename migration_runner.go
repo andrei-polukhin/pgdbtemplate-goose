@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
+	"io/fs"
 
 	"github.com/andrei-polukhin/pgdbtemplate"
 	pgdbtemplatepgx "github.com/andrei-polukhin/pgdbtemplate-pgx"
@@ -15,33 +15,39 @@ import (
 
 // MigrationRunner implements pgdbtemplate.MigrationRunner using goose.
 type MigrationRunner struct {
-	migrationsDir string
-	dialect       goose.Dialect
-	opts          []goose.ProviderOption
+	migrationsFs fs.FS
+	dialect      goose.Dialect
+	opts         []goose.ProviderOption
 }
 
 // NewMigrationRunner creates a new goose-based migration runner.
 //
-// The migrationsDir should point to a directory containing goose migration files.
-// By default, uses "postgres" dialect.
+// The migrationsFs parameter accepts any fs.FS implementation containing goose migration files.
+// This provides flexibility to use os.DirFS(), embed.FS, or any custom fs.FS implementation.
+// By default, uses goose.DialectPostgres dialect.
 //
-// Example:
+// Example with filesystem directory:
 //
+//	migrationsFs := os.DirFS("./migrations")
 //	runner := pgdbtemplategoose.NewMigrationRunner(
-//	    "./migrations",
-//	    pgdbtemplategoose.WithDialect("postgres"),
+//	    migrationsFs,
+//	    pgdbtemplategoose.WithDialect(goose.DialectPostgres),
 //	)
-func NewMigrationRunner(migrationsDir string, options ...Option) *MigrationRunner {
+//
+// Example with embedded filesystem:
+//
+//	//go:embed migrations/*.sql
+//	var migrationsFS embed.FS
+//	runner := pgdbtemplategoose.NewMigrationRunner(migrationsFS)
+func NewMigrationRunner(migrationsFs fs.FS, options ...Option) *MigrationRunner {
 	runner := &MigrationRunner{
-		migrationsDir: migrationsDir,
-		dialect:       goose.DialectPostgres,
-		opts:          []goose.ProviderOption{},
+		migrationsFs: migrationsFs,
+		dialect:      goose.DialectPostgres,
 	}
 
 	for _, opt := range options {
 		opt(runner)
 	}
-
 	return runner
 }
 
@@ -58,8 +64,7 @@ func (r *MigrationRunner) RunMigrations(ctx context.Context, conn pgdbtemplate.D
 	}
 
 	// Create goose provider with dialect.
-	// Using NewProvider directly is thread-safe and doesn't require global SetDialect().
-	provider, err := goose.NewProvider(r.dialect, db, os.DirFS(r.migrationsDir), r.opts...)
+	provider, err := goose.NewProvider(r.dialect, db, r.migrationsFs, r.opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create goose provider: %w", err)
 	}

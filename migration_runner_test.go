@@ -50,8 +50,9 @@ DROP TABLE goose_test_users;
 		// Create connection provider.
 		provider := pgdbtemplatepq.NewConnectionProvider(testConnectionStringFunc)
 
-		// Create goose migration runner.
-		runner := pgdbtemplategoose.NewMigrationRunner(migrationsDir)
+		// Create goose migration runner using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsFs)
 
 		// Create template manager.
 		config := pgdbtemplate.Config{
@@ -127,8 +128,9 @@ DROP TABLE goose_test_comments;
 		// Create connection provider.
 		provider := pgdbtemplatepq.NewConnectionProvider(testConnectionStringFunc)
 
-		// Create goose migration runner.
-		runner := pgdbtemplategoose.NewMigrationRunner(migrationsDir)
+		// Create goose migration runner using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsFs)
 
 		// Create template manager.
 		config := pgdbtemplate.Config{
@@ -188,9 +190,10 @@ DROP TABLE goose_dialect_test;
 		// Create connection provider.
 		provider := pgdbtemplatepq.NewConnectionProvider(testConnectionStringFunc)
 
-		// Create goose migration runner with explicit dialect.
+		// Create goose migration runner with explicit dialect using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
 		runner := pgdbtemplategoose.NewMigrationRunner(
-			migrationsDir,
+			migrationsFs,
 			pgdbtemplategoose.WithDialect(goose.DialectPostgres),
 		)
 
@@ -247,8 +250,9 @@ DROP TABLE test;
 		err = os.WriteFile(filepath.Join(migrationsDir, "00001_test.sql"), []byte(migrationSQL), 0644)
 		c.Assert(err, qt.IsNil)
 
-		// Create goose migration runner.
-		runner := pgdbtemplategoose.NewMigrationRunner(migrationsDir)
+		// Create goose migration runner using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsFs)
 
 		// Create a mock connection that is not pgdbtemplate-pq.
 		type mockConnection struct {
@@ -263,8 +267,9 @@ DROP TABLE test;
 	c.Run("Invalid migration directory", func(c *qt.C) {
 		c.Parallel()
 
-		// Use non-existent directory.
-		runner := pgdbtemplategoose.NewMigrationRunner("/nonexistent/path")
+		// Use non-existent directory via fs.FS.
+		migrationsFs := os.DirFS("/nonexistent/path")
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsFs)
 
 		// Create connection provider.
 		provider := pgdbtemplatepq.NewConnectionProvider(testConnectionStringFunc)
@@ -306,8 +311,9 @@ DROP TABLE test;
 		// Create connection provider.
 		provider := pgdbtemplatepq.NewConnectionProvider(testConnectionStringFunc)
 
-		// Create goose migration runner.
-		runner := pgdbtemplategoose.NewMigrationRunner(migrationsDir)
+		// Create goose migration runner using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsFs)
 
 		// Create template manager.
 		config := pgdbtemplate.Config{
@@ -346,9 +352,10 @@ DROP TABLE goose_options_test;
 		// Create connection provider.
 		provider := pgdbtemplatepq.NewConnectionProvider(testConnectionStringFunc)
 
-		// Create goose migration runner with custom options.
+		// Create goose migration runner with custom options using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
 		runner := pgdbtemplategoose.NewMigrationRunner(
-			migrationsDir,
+			migrationsFs,
 			pgdbtemplategoose.WithDialect(goose.DialectPostgres),
 			pgdbtemplategoose.WithGooseOptions(
 				goose.WithAllowOutofOrder(true),
@@ -425,8 +432,9 @@ DROP TABLE goose_pgx_test_users;
 		provider := pgdbtemplatepgx.NewConnectionProvider(testConnectionStringFunc)
 		defer provider.Close()
 
-		// Create goose migration runner.
-		runner := pgdbtemplategoose.NewMigrationRunner(migrationsDir)
+		// Create goose migration runner using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsFs)
 
 		// Create template manager.
 		config := pgdbtemplate.Config{
@@ -511,8 +519,9 @@ ALTER TABLE goose_pgx_products DROP COLUMN description;
 		provider := pgdbtemplatepgx.NewConnectionProvider(testConnectionStringFunc)
 		defer provider.Close()
 
-		// Create goose migration runner.
-		runner := pgdbtemplategoose.NewMigrationRunner(migrationsDir)
+		// Create goose migration runner using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsFs)
 
 		// Create template manager.
 		config := pgdbtemplate.Config{
@@ -574,9 +583,10 @@ DROP TABLE goose_pgx_options_test;
 		provider := pgdbtemplatepgx.NewConnectionProvider(testConnectionStringFunc)
 		defer provider.Close()
 
-		// Create goose migration runner with options.
+		// Create goose migration runner with options using fs.FS.
+		migrationsFs := os.DirFS(migrationsDir)
 		runner := pgdbtemplategoose.NewMigrationRunner(
-			migrationsDir,
+			migrationsFs,
 			pgdbtemplategoose.WithDialect(goose.DialectPostgres),
 			pgdbtemplategoose.WithGooseOptions(
 				goose.WithVerbose(false),
