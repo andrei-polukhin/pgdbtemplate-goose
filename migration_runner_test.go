@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrei-polukhin/pgdbtemplate"
 	pgdbtemplategoose "github.com/andrei-polukhin/pgdbtemplate-goose"
+	pgdbtemplatepgx "github.com/andrei-polukhin/pgdbtemplate-pgx"
 	pgdbtemplatepq "github.com/andrei-polukhin/pgdbtemplate-pq"
 	qt "github.com/frankban/quicktest"
 	"github.com/pressly/goose/v3"
@@ -388,5 +389,231 @@ DROP TABLE goose_options_test;
 		`).Scan(&tableName)
 		c.Assert(err, qt.IsNil)
 		c.Assert(tableName, qt.Equals, "goose_options_test")
+	})
+}
+
+func TestGooseMigrationRunnerWithPgx(t *testing.T) {
+	t.Parallel()
+	c := qt.New(t)
+	ctx := context.Background()
+
+	c.Run("Basic migration execution with pgx", func(c *qt.C) {
+		c.Parallel()
+
+		// Create temporary migration directory.
+		tempDir := c.TempDir()
+		migrationsDir := filepath.Join(tempDir, "migrations")
+		err := os.MkdirAll(migrationsDir, 0755)
+		c.Assert(err, qt.IsNil)
+
+		// Create a simple migration file.
+		migrationSQL := `-- +goose Up
+CREATE TABLE goose_pgx_test_users (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT
+);
+
+-- +goose Down
+DROP TABLE goose_pgx_test_users;
+`
+		migrationFile := filepath.Join(migrationsDir, "00001_create_users.sql")
+		err = os.WriteFile(migrationFile, []byte(migrationSQL), 0644)
+		c.Assert(err, qt.IsNil)
+
+		// Create pgx connection provider.
+		provider := pgdbtemplatepgx.NewConnectionProvider(testConnectionStringFunc)
+		defer provider.Close()
+
+		// Create goose migration runner.
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsDir)
+
+		// Create template manager.
+		config := pgdbtemplate.Config{
+			ConnectionProvider: provider,
+			MigrationRunner:    runner,
+		}
+
+		tm, err := pgdbtemplate.NewTemplateManager(config)
+		c.Assert(err, qt.IsNil)
+
+		// Initialize template database.
+		err = tm.Initialize(ctx)
+		c.Assert(err, qt.IsNil)
+		defer tm.Cleanup(ctx)
+
+		// Create test database.
+		testDB, dbName, err := tm.CreateTestDatabase(ctx)
+		c.Assert(err, qt.IsNil)
+		defer testDB.Close()
+		defer tm.DropTestDatabase(ctx, dbName)
+
+		// Verify the migration ran by checking if table exists.
+		pgxConn, ok := testDB.(*pgdbtemplatepgx.DatabaseConnection)
+		c.Assert(ok, qt.IsTrue, qt.Commentf("expected *pgdbtemplatepgx.DatabaseConnection"))
+
+		var tableName string
+		err = pgxConn.Pool.QueryRow(ctx, `
+			SELECT table_name 
+			FROM information_schema.tables 
+			WHERE table_schema = 'public' 
+			AND table_name = 'goose_pgx_test_users'
+		`).Scan(&tableName)
+		c.Assert(err, qt.IsNil)
+		c.Assert(tableName, qt.Equals, "goose_pgx_test_users")
+
+		// Verify goose version table was created.
+		var versionTableName string
+		err = pgxConn.Pool.QueryRow(ctx, `
+			SELECT table_name 
+			FROM information_schema.tables 
+			WHERE table_schema = 'public' 
+			AND table_name = 'goose_db_version'
+		`).Scan(&versionTableName)
+		c.Assert(err, qt.IsNil)
+		c.Assert(versionTableName, qt.Equals, "goose_db_version")
+	})
+
+	c.Run("Multiple migrations with pgx", func(c *qt.C) {
+		c.Parallel()
+
+		// Create temporary migration directory.
+		tempDir := c.TempDir()
+		migrationsDir := filepath.Join(tempDir, "migrations")
+		err := os.MkdirAll(migrationsDir, 0755)
+		c.Assert(err, qt.IsNil)
+
+		// Create first migration.
+		migration1 := `-- +goose Up
+CREATE TABLE goose_pgx_products (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    price DECIMAL(10, 2)
+);
+
+-- +goose Down
+DROP TABLE goose_pgx_products;
+`
+		err = os.WriteFile(filepath.Join(migrationsDir, "00001_create_products.sql"), []byte(migration1), 0644)
+		c.Assert(err, qt.IsNil)
+
+		// Create second migration.
+		migration2 := `-- +goose Up
+ALTER TABLE goose_pgx_products ADD COLUMN description TEXT;
+
+-- +goose Down
+ALTER TABLE goose_pgx_products DROP COLUMN description;
+`
+		err = os.WriteFile(filepath.Join(migrationsDir, "00002_add_description.sql"), []byte(migration2), 0644)
+		c.Assert(err, qt.IsNil)
+
+		// Create pgx connection provider.
+		provider := pgdbtemplatepgx.NewConnectionProvider(testConnectionStringFunc)
+		defer provider.Close()
+
+		// Create goose migration runner.
+		runner := pgdbtemplategoose.NewMigrationRunner(migrationsDir)
+
+		// Create template manager.
+		config := pgdbtemplate.Config{
+			ConnectionProvider: provider,
+			MigrationRunner:    runner,
+		}
+
+		tm, err := pgdbtemplate.NewTemplateManager(config)
+		c.Assert(err, qt.IsNil)
+
+		// Initialize template database.
+		err = tm.Initialize(ctx)
+		c.Assert(err, qt.IsNil)
+		defer tm.Cleanup(ctx)
+
+		// Create test database.
+		testDB, dbName, err := tm.CreateTestDatabase(ctx)
+		c.Assert(err, qt.IsNil)
+		defer testDB.Close()
+		defer tm.DropTestDatabase(ctx, dbName)
+
+		// Verify both migrations ran.
+		pgxConn := testDB.(*pgdbtemplatepgx.DatabaseConnection)
+
+		var columnName string
+		err = pgxConn.Pool.QueryRow(ctx, `
+			SELECT column_name 
+			FROM information_schema.columns 
+			WHERE table_schema = 'public' 
+			AND table_name = 'goose_pgx_products' 
+			AND column_name = 'description'
+		`).Scan(&columnName)
+		c.Assert(err, qt.IsNil)
+		c.Assert(columnName, qt.Equals, "description")
+	})
+
+	c.Run("Pgx with custom goose options", func(c *qt.C) {
+		c.Parallel()
+
+		// Create temporary migration directory.
+		tempDir := c.TempDir()
+		migrationsDir := filepath.Join(tempDir, "migrations")
+		err := os.MkdirAll(migrationsDir, 0755)
+		c.Assert(err, qt.IsNil)
+
+		// Create migration.
+		migrationSQL := `-- +goose Up
+CREATE TABLE goose_pgx_options_test (
+    id SERIAL PRIMARY KEY
+);
+
+-- +goose Down
+DROP TABLE goose_pgx_options_test;
+`
+		err = os.WriteFile(filepath.Join(migrationsDir, "00001_options_test.sql"), []byte(migrationSQL), 0644)
+		c.Assert(err, qt.IsNil)
+
+		// Create pgx connection provider.
+		provider := pgdbtemplatepgx.NewConnectionProvider(testConnectionStringFunc)
+		defer provider.Close()
+
+		// Create goose migration runner with options.
+		runner := pgdbtemplategoose.NewMigrationRunner(
+			migrationsDir,
+			pgdbtemplategoose.WithDialect(goose.DialectPostgres),
+			pgdbtemplategoose.WithGooseOptions(
+				goose.WithVerbose(false),
+			),
+		)
+
+		// Create template manager.
+		config := pgdbtemplate.Config{
+			ConnectionProvider: provider,
+			MigrationRunner:    runner,
+		}
+
+		tm, err := pgdbtemplate.NewTemplateManager(config)
+		c.Assert(err, qt.IsNil)
+
+		// Initialize template database.
+		err = tm.Initialize(ctx)
+		c.Assert(err, qt.IsNil)
+		defer tm.Cleanup(ctx)
+
+		// Create test database.
+		testDB, dbName, err := tm.CreateTestDatabase(ctx)
+		c.Assert(err, qt.IsNil)
+		defer testDB.Close()
+		defer tm.DropTestDatabase(ctx, dbName)
+
+		// Verify table was created.
+		pgxConn := testDB.(*pgdbtemplatepgx.DatabaseConnection)
+
+		var tableName string
+		err = pgxConn.Pool.QueryRow(ctx, `
+			SELECT table_name 
+			FROM information_schema.tables 
+			WHERE table_schema = 'public' 
+			AND table_name = 'goose_pgx_options_test'
+		`).Scan(&tableName)
+		c.Assert(err, qt.IsNil)
+		c.Assert(tableName, qt.Equals, "goose_pgx_options_test")
 	})
 }

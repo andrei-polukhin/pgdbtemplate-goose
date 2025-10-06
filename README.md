@@ -15,7 +15,8 @@ A [goose](https://github.com/pressly/goose) migration adapter for
 - 🔒 **Thread-safe** - Safe for concurrent test execution
 - 📁 **Standard Migrations** - Use your existing goose migration files
 - ⚙️ **Configurable** - Support for custom goose options and dialects
-- 🧪 **Well-tested** - 75%+ test coverage with real PostgreSQL integration
+- 🎯 **Flexible Driver Support** - Works with both `pq` and `pgx/v5`
+- 🧪 **Well-tested** - 95%+ test coverage with real PostgreSQL integration
 
 ## Installation
 
@@ -41,11 +42,12 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Create connection provider (must use pq for goose).
+	// Create connection provider (works with both pq and pgx).
 	connStringFunc := func(dbName string) string {
 		return fmt.Sprintf("postgres://user:pass@localhost/%s?sslmode=disable", dbName)
 	}
 	provider := pgdbtemplatepq.NewConnectionProvider(connStringFunc)
+	// Or use: provider := pgdbtemplatepgx.NewConnectionProvider(connStringFunc)
 
 	// Create goose migration runner.
 	migrationRunner := pgdbtemplategoose.NewMigrationRunner("./migrations")
@@ -97,8 +99,8 @@ runner := pgdbtemplategoose.NewMigrationRunner(
 
 - Go 1.21+
 - PostgreSQL 9.5+
-- **Note**: This adapter requires `pgdbtemplate-pq` (database/sql) driver.
-  It is not compatible with `pgdbtemplate-pgx` due to goose's database/sql dependency.
+- **Driver**: Works with both `pgdbtemplate-pq` (database/sql) and
+  `pgdbtemplate-pgx` (pgx/v5)
 
 ## License
 

@@ -7,7 +7,9 @@ import (
 	"os"
 
 	"github.com/andrei-polukhin/pgdbtemplate"
+	pgdbtemplatepgx "github.com/andrei-polukhin/pgdbtemplate-pgx"
 	pgdbtemplatepq "github.com/andrei-polukhin/pgdbtemplate-pq"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 )
 
@@ -46,7 +48,7 @@ func NewMigrationRunner(migrationsDir string, options ...Option) *MigrationRunne
 // RunMigrations implements pgdbtemplate.MigrationRunner.RunMigrations.
 //
 // It runs all pending goose migrations on the provided database connection.
-// The connection must be compatible with database/sql (e.g., using pgdbtemplate-pq).
+// Supports both pgdbtemplate-pq (database/sql) and pgdbtemplate-pgx (pgx/v5).
 func (r *MigrationRunner) RunMigrations(ctx context.Context, conn pgdbtemplate.DatabaseConnection) error {
 	// Extract *sql.DB from connection.
 	// This assumes the connection is from pgdbtemplate-pq which embeds *sql.DB.
@@ -72,11 +74,19 @@ func (r *MigrationRunner) RunMigrations(ctx context.Context, conn pgdbtemplate.D
 }
 
 // extractSQLDB attempts to extract *sql.DB from the connection.
+// Supports both pgdbtemplate-pq and pgdbtemplate-pgx.
 func (r *MigrationRunner) extractSQLDB(conn pgdbtemplate.DatabaseConnection) (*sql.DB, error) {
-	// goose requires database/sql, so we expect pgdbtemplate-pq connection.
-	pqConn, ok := conn.(*pgdbtemplatepq.DatabaseConnection)
-	if !ok {
-		return nil, fmt.Errorf("goose adapter requires pgdbtemplate-pq connection, got %T", conn)
+	// Try pgdbtemplate-pq first (embeds *sql.DB).
+	if pqConn, ok := conn.(*pgdbtemplatepq.DatabaseConnection); ok {
+		return pqConn.DB, nil
 	}
-	return pqConn.DB, nil
+
+	// Try pgdbtemplate-pgx (has Pool field).
+	if pgxConn, ok := conn.(*pgdbtemplatepgx.DatabaseConnection); ok {
+		// Wrap the pool with stdlib to get *sql.DB.
+		db := stdlib.OpenDBFromPool(pgxConn.Pool)
+		return db, nil
+	}
+
+	return nil, fmt.Errorf("goose adapter requires pgdbtemplate-pq or pgdbtemplate-pgx connection, got %T", conn)
 }
