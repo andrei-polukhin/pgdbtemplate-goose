@@ -3,7 +3,7 @@ module github.com/andrei-polukhin/pgdbtemplate-goose
 go 1.21.0
 
 require (
-	github.com/andrei-polukhin/pgdbtemplate v1.0.1
+	github.com/andrei-polukhin/pgdbtemplate v1.0.2
 	github.com/andrei-polukhin/pgdbtemplate-pgx v1.1.0
 	github.com/andrei-polukhin/pgdbtemplate-pq v1.0.1
 	github.com/frankban/quicktest v1.14.6
