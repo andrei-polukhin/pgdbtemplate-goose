@@ -1,13 +1,13 @@
 module github.com/andrei-polukhin/pgdbtemplate-goose
 
-go 1.21.0
+go 1.24.0
 
 require (
 	github.com/andrei-polukhin/pgdbtemplate v1.0.3
 	github.com/andrei-polukhin/pgdbtemplate-pgx v1.1.0
 	github.com/andrei-polukhin/pgdbtemplate-pq v1.0.1
 	github.com/frankban/quicktest v1.14.6
-	github.com/jackc/pgx/v5 v5.7.1
+	github.com/jackc/pgx/v5 v5.8.0
 	github.com/pressly/goose/v3 v3.22.1
 )
 
@@ -23,7 +23,6 @@ require (
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 )
