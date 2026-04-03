@@ -1,7 +1,7 @@
 github.com/andrei-polukhin/pgdbtemplate v1.0.3 h1:HUFli53N9DZ3okz4sZP3IL7ZQBmHJb3w8uLMAE1aBx0=
 github.com/andrei-polukhin/pgdbtemplate v1.0.3/go.mod h1:JsHTJmrYkOYaESclpJJbQxIseMKk/k4kpcm4ixynQ3Q=
-github.com/andrei-polukhin/pgdbtemplate-pgx v1.1.0 h1:+DiwFlg/T15eTAPceRNKUmUCXMEbifdMWpE1cwqQWlU=
-github.com/andrei-polukhin/pgdbtemplate-pgx v1.1.0/go.mod h1:ZUpknIac7mLtgwLhDb73G14hLy0bKsJVxCGDseC5DYo=
+github.com/andrei-polukhin/pgdbtemplate-pgx v1.1.1 h1:3FP6sKFAWV1WxdxwOyI/sOY4a8pBgY3+/K6tP1NAE0A=
+github.com/andrei-polukhin/pgdbtemplate-pgx v1.1.1/go.mod h1:9xdyvRPIfiFyGknuw7UZ+HyUAXLnEKgVKDz+YcOuIAg=
 github.com/andrei-polukhin/pgdbtemplate-pq v1.0.1 h1:HIXWUR74a/K4SPfqlaErxfwNJwDod6jYnB0M8ZOqeGE=
 github.com/andrei-polukhin/pgdbtemplate-pq v1.0.1/go.mod h1:LCyFXWzbgoocoM34s6YOS54gCyH/13n5qXfIfwn31IU=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=

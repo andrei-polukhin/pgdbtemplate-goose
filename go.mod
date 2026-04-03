@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	github.com/andrei-polukhin/pgdbtemplate v1.0.3
-	github.com/andrei-polukhin/pgdbtemplate-pgx v1.1.0
+	github.com/andrei-polukhin/pgdbtemplate-pgx v1.1.1
 	github.com/andrei-polukhin/pgdbtemplate-pq v1.0.1
 	github.com/frankban/quicktest v1.14.6
 	github.com/jackc/pgx/v5 v5.7.1
